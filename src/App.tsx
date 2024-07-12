@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import './App.css';
 import { v4 as uuidv4 } from 'uuid';
+import e from 'express';
 
 type Note = {
 	id: number;
@@ -36,10 +37,16 @@ const App = () => {
 	const [title, setTitle] = useState('');
 	const [content, setContent] = useState('');
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+
+	const handleNoteClick = (note: Note) => {
+		setSelectedNote(note);
+		setTitle(note.title);
+		setContent(note.content);
+	};
+
+	const handleAddNote = (e: React.FormEvent) => {
 		e.preventDefault();
-		console.log('title', title);
-		console.log('content', content);
 
 		const newNote: Note = {
 			id: notes.length + 1,
@@ -52,9 +59,42 @@ const App = () => {
 		setContent('');
 	};
 
+	const handleUpdatedNote = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!selectedNote) {
+			return;
+		}
+
+		const upDatedNote: Note = {
+			id: selectedNote.id,
+			title: title,
+			content: content,
+		};
+
+		const upDatedNotesList = notes.map((note) =>
+			note.id === selectedNote.id ? upDatedNote : note
+		);
+
+		setNotes(upDatedNotesList);
+		setTitle('');
+		setContent('');
+		setSelectedNote(null);
+	};
+
+	const handleCancel = () => {
+		setTitle('');
+		setContent('');
+		setSelectedNote(null);
+	};
+
 	return (
 		<div className="app-container">
-			<form className="note-form" onSubmit={(event) => handleSubmit(event)}>
+			<form
+				className="note-form"
+				onSubmit={(event) =>
+					selectedNote ? handleUpdatedNote(event) : handleAddNote(event)
+				}
+			>
 				<input
 					value={title}
 					onChange={(e) => setTitle(e.target.value)}
@@ -68,11 +108,23 @@ const App = () => {
 					rows={10}
 					required
 				></textarea>
-				<button type="submit">Add note</button>
+
+				{selectedNote ? (
+					<div className="edit-buttons">
+						<button type="submit">Save</button>
+						<button onClick={handleCancel}>Cancel</button>
+					</div>
+				) : (
+					<button type="submit">Add Note</button>
+				)}
 			</form>
 			<div className="notes-grid">
 				{notes.map((note) => (
-					<div key={uuidv4()} className="note-item">
+					<div
+						key={uuidv4()}
+						className="note-item"
+						onClick={() => handleNoteClick(note)}
+					>
 						<div className="notes-header">
 							<button>x</button>
 						</div>
